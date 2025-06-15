@@ -1,0 +1,108 @@
+node_name                     = "pve-node01"
+datastore_disk                = "local-lvm"
+network_bridge                = "vmbr0"
+virtual_environment_endpoint  = "https://192.168.1.100:8006"
+virtual_environment_api_token = "root@pam!terraform=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+agent_enabled                 = true
+vm_reboot                     = false
+
+default_cpu_type              = "x86-64-v2-AES"
+default_hotplug_cpu           = false
+default_hotplug_memory        = false
+default_max_cpu               = 4
+default_max_memory            = 8192
+default_machine_type          = "i440fx"
+default_full_clone            = true
+
+vms = {
+  dev-srv01 = {
+    name                = "dev-server-01"
+    node_name           = "pve-node01"
+    vm_id               = 5501
+    clone_vm_id         = 9000  # Template VM ID
+    cpu_cores           = 1
+    memory              = 2048
+    disk_size           = 20     # Resize disk if needed
+    vlan_id             = 102
+    tags                = ["production"]
+  },
+
+  prod-srv02 = {
+    name                = "dev-server-02"
+    node_name           = "pve-node01"
+    vm_id               = 5502
+    clone_vm_id         = 9000
+    cpu_cores           = 1
+    memory              = 2048
+    disk_size           = 20
+    vlan_id             = 102
+    tags                = ["production"]
+  },
+
+  dev-srv03 = {
+    name                = "dev-server-03"
+    node_name           = "pve-node01"
+    vm_id               = 5503
+    clone_vm_id         = 9000
+    cpu_cores           = 1
+    hotplug_cpu         = true
+    max_cpu             = 8
+    memory              = 2048
+    hotplug_memory      = true
+    disk_size           = 20
+    vlan_id             = 102
+    tags                = ["development"]
+  },
+
+  scaling-srv = {
+    name                = "scaling-server-04"
+    node_name           = "pve-node01"
+    vm_id               = 5504
+    clone_vm_id         = 9000
+    cpu_type            = "host"
+    cpu_cores           = 6
+    memory              = 4096
+    disk_size           = 40
+    vlan_id             = 102
+    hotplug_cpu         = true
+    hotplug_memory      = true
+    max_cpu             = 8
+    max_memory          = 16384
+    tags                = ["scalable"]
+    # Persistent disks example
+    persistent_disks = [
+      {
+        id   = "data1"
+        size = 100
+      },
+      {
+        id   = "data2"
+        size = 200
+      }
+    ]
+  },
+
+  # Example with GPU passthrough
+  # gpu-srv = {
+  #   name                = "gpu-server-05"
+  #   node_name           = "pve-node01"
+  #   vm_id               = 5505
+  #   clone_vm_id         = 9000
+  #   cpu_type            = "host"
+  #   cpu_cores           = 8
+  #   memory              = 16384
+  #   disk_size           = 100
+  #   vlan_id             = 102
+  #   machine_type        = "q35"
+  #   hostpci = [
+  #     {
+  #       device = "hostpci0"
+  #       mapping = "gpu-2200"
+  #       pcie   = true
+  #       rombar = true
+  #       xvga   = false
+  #     }
+  #   ]
+  #   tags = ["gpu", "compute"]
+  # },
+}

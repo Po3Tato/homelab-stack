@@ -1,0 +1,30 @@
+vultr_api_key = "5HMAL47AB6N36CDLWZTPLNRAQ7YFDOBTE6GA"
+username = "ubuntu"
+hostname = "prod"  # Changed from basename to hostname
+tailscale_auth_key = "<AUTH TOKEN>"
+ssh_key_name = "<Name of ssh key on Vultur account>"
+ssh_pub_key = "<SSH PUB KEY>"
+region = "ord"
+os_id = 2465 # Ubuntu 24.10 x64
+firewall_group_id = "<From Vultur>"
+backups_enabled = "enabled"
+backup_schedule = {
+  type = "weekly"
+  dow = "7"        # Sunday
+  hour = "2"       # (2 AM UTC)
+}
+script_name = "cloud-init.yaml"
+instances = {
+  "ext02" = {
+    plan = "vhf-1c-2gb"
+    region = "ord"
+    number = 1
+    tags = ["PROD", "OpenTofu"]
+  },
+#  "ext02" = {
+#    plan = "vhp-1c-1gb"
+#    region = "ord"
+#    number = 1
+#    tags = ["DEV", "OpenTofu"]
+#  }
+}
