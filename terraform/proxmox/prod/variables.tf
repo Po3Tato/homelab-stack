@@ -21,6 +21,7 @@ variable "vms" {
     clone_node_name     = optional(string)
     clone_datastore_id  = optional(string)
     full_clone          = optional(bool)
+    discard             = optional(string)
     hostpci = optional(list(object({
       device = string
       mapping     = string
@@ -134,4 +135,15 @@ variable "default_ssd_emulation" {
   description = "Default SSD emulation setting for disks if not specified per-VM."
   type        = bool
   default     = true
+}
+
+
+variable "default_discard" {
+  description = "Default discard setting for disks if not specified per-VM."
+  type        = string
+  default     = "on"
+  validation {
+    condition     = contains(["on", "ignore"], var.default_discard)
+    error_message = "Default discard must be either 'on' or 'ignore'."
+  }
 }

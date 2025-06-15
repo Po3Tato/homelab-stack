@@ -144,6 +144,16 @@ variable "viommu" {
   default     = ""
 }
 
+variable "discard" {
+  description = "Whether to pass discard/trim requests to the underlying storage"
+  type        = string
+  default     = "on"
+  validation {
+    condition     = contains(["on", "ignore"], var.discard)
+    error_message = "Discard must be either 'on' or 'ignore'."
+  }
+}
+
 variable "hostpci" {
   description = "List of host PCI devices to pass through"
   type = list(object({

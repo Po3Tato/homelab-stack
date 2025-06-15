@@ -13,6 +13,9 @@ locals {
   safe_max_memory     = var.max_memory == null ? var.memory : var.max_memory
   safe_machine_type   = var.machine_type == null ? "pc" : var.machine_type
   safe_viommu         = var.viommu == null ? "" : var.viommu
+  safe_iothread       = var.iothread == null ? true : var.iothread
+  safe_ssd_emulation  = var.ssd_emulation == null ? true : var.ssd_emulation
+  safe_discard        = var.discard == null ? "on" : var.discard
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
@@ -69,6 +72,9 @@ resource "proxmox_virtual_environment_vm" "vm" {
       interface    = "scsi0"
       size         = var.disk_size
       datastore_id = var.datastore_disk
+      iothread     = local.safe_iothread
+      ssd          = local.safe_ssd_emulation
+      discard      = local.safe_discard
     }
   }
 

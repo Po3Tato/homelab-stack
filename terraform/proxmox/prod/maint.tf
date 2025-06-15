@@ -28,6 +28,7 @@ module "vms" {
   numa            = lookup(each.value, "numa", var.default_numa)
   iothread        = lookup(each.value, "iothread", var.default_iothread)
   ssd_emulation   = lookup(each.value, "ssd_emulation", var.default_ssd_emulation)
+  discard         = lookup(each.value, "discard", var.default_discard)
 
   network_bridge  = var.network_bridge
   vlan_id         = each.value.vlan_id
@@ -35,6 +36,6 @@ module "vms" {
   datastore_disk  = var.datastore_disk
   agent_enabled   = var.agent_enabled
   vm_reboot       = lookup(each.value, "vm_reboot", var.vm_reboot)
-  tags            = concat(["opentofu" ,"prod-base-img" ,"linux,prod"], lookup(each.value, "tags", []))
+  tags            = concat(["opentofu", "prod", "prod-base-img", "linux", "prod"], lookup(each.value, "tags", []))
   hostpci         = lookup(each.value, "hostpci", [])
 }
