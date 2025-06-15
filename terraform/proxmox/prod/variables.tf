@@ -12,6 +12,7 @@ variable "vms" {
     cpu_type            = optional(string)
     hotplug_cpu         = optional(bool)
     hotplug_memory      = optional(bool)
+    hotplugged_vcpu     = optional(number)
     max_cpu             = optional(number)
     max_memory          = optional(number)
     machine_type        = optional(string)
@@ -146,4 +147,10 @@ variable "default_discard" {
     condition     = contains(["on", "ignore"], var.default_discard)
     error_message = "Default discard must be either 'on' or 'ignore'."
   }
+}
+
+variable "default_hotplugged_vcpu" {
+  description = "Default number of hotplugged vCPUs if not specified per-VM."
+  type        = number
+  default     = null
 }

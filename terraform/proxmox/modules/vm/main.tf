@@ -16,6 +16,7 @@ locals {
   safe_iothread       = var.iothread == null ? true : var.iothread
   safe_ssd_emulation  = var.ssd_emulation == null ? true : var.ssd_emulation
   safe_discard        = var.discard == null ? "on" : var.discard
+  safe_hotplugged_vcpu = var.hotplugged_vcpu != null ? var.hotplugged_vcpu : (local.safe_hotplug_cpu ? (local.safe_max_cpu - var.cpu_cores) : 0)
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
@@ -55,7 +56,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     cores      = var.cpu_cores
     type       = var.cpu_type
     numa       = local.safe_hotplug_cpu
-    hotplugged = local.safe_hotplug_cpu ? (local.safe_max_cpu - var.cpu_cores) : 0
+    hotplugged = local.safe_hotplugged_vcpu
     flags      = local.safe_hotplug_cpu ? ["+pcid", "+aes"] : ["+aes"]
     units      = 1024
   }

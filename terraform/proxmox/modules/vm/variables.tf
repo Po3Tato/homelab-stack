@@ -132,6 +132,12 @@ variable "max_memory" {
   default     = null
 }
 
+variable "hotplugged_vcpu" {
+  description = "Number of hotplugged vCPUs (explicit count)"
+  type        = number
+  default     = null
+}
+
 variable "machine_type" {
   description = "Machine type for the VM"
   type        = string
