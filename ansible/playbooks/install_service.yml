@@ -1,0 +1,41 @@
+---
+- name: Install Application
+  hosts: "{{ target_hosts | default('all') }}"
+  become: true
+  vars:
+    app_name: "{{ app | mandatory }}"
+  
+  pre_tasks:
+    - name: Validate app exists
+      stat:
+        path: "{{ playbook_dir }}/apps/{{ app_name }}.yml"
+      register: app_file
+      delegate_to: localhost
+      become: false
+      
+    - name: Fail if app doesn't exist
+      fail:
+        msg: "App '{{ app_name }}' not found. Make sure 'apps/{{ app_name }}.yml' exists."
+      when: not app_file.stat.exists
+
+    - name: Check if vars file exists for {{ app_name }}
+      stat:
+        path: "{{ playbook_dir }}/group_vars/{{ app_name }}.yml"
+      register: vars_file
+      delegate_to: localhost
+      become: false
+
+    - name: Load application variables
+      include_vars: "group_vars/{{ app_name }}.yml"
+      when: vars_file.stat.exists
+
+  tasks:
+    - name: Include app-specific tasks for {{ app_name }}
+      ansible.builtin.include_tasks: "apps/{{ app_name }}.yml"
+      tags: app_install
+
+  post_tasks:
+    - name: Check application status
+      debug:
+        msg: "{{ app_name }} installation completed on {{ inventory_hostname }}"
+      tags: status

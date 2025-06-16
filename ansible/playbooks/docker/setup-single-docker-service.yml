@@ -1,0 +1,73 @@
+---
+- name: Get service folder name
+  set_fact:
+    service_folder: "{{ service_folders[service_name] if service_name in service_folders else service_name }}"
+
+- name: Set persistent repo path
+  set_fact:
+    persistent_repo_path: "/tmp/docker-services"
+
+- name: Check if service exists in repo (on target server)
+  stat:
+    path: "{{ persistent_repo_path }}/{{ service_folder }}"
+  register: service_exists
+
+- name: Fail if service doesn't exist
+  fail:
+    msg: "Service '{{ service_name }}' (folder: {{ service_folder }}) not found in docker-services repo"
+  when: not service_exists.stat.exists
+
+- name: Copy service directory from temp to final location (on target server)
+  copy:
+    src: "{{ persistent_repo_path }}/{{ service_folder }}/"
+    dest: "{{ current_docker_path }}/{{ service_name }}/"
+    remote_src: yes
+    mode: '0775'
+    directory_mode: '0775'
+    owner: "{{ docker_user }}"
+    group: "{{ docker_user }}"
+
+- name: Check for environment template (on controller)
+  stat:
+    path: "templates/{{ service_name }}.env.j2"
+  delegate_to: localhost
+  become: no
+  register: env_template_exists
+
+- name: Template environment file from Ansible template
+  template:
+    src: "{{ service_name }}.env.j2"
+    dest: "{{ current_docker_path }}/{{ service_name }}/.env"
+    mode: '0600'
+    owner: "{{ docker_user }}"
+    group: "{{ docker_user }}"
+    backup: yes
+  when: env_template_exists.stat.exists
+
+- name: Create .env from .env.example if no template exists
+  copy:
+    src: "{{ current_docker_path }}/{{ service_name }}/.env.example"
+    dest: "{{ current_docker_path }}/{{ service_name }}/.env"
+    remote_src: yes
+    force: no
+    mode: '0600'
+    owner: "{{ docker_user }}"
+    group: "{{ docker_user }}"
+  when: not env_template_exists.stat.exists
+  ignore_errors: yes
+
+- name: Replace domain placeholders in docker-compose.yml
+  replace:
+    path: "{{ current_docker_path }}/{{ service_name }}/docker-compose.yml"
+    regexp: "example\\.com"
+    replace: "{{ domain_name | default('example.com') }}"
+
+- name: Replace instance IP placeholders
+  replace:
+    path: "{{ current_docker_path }}/{{ service_name }}/docker-compose.yml"
+    regexp: "<Instance-IP>"
+    replace: "{{ ansible_default_ipv4.address }}"
+
+- name: Display service setup completion
+  debug:
+    msg: "📁 Service {{ service_name }} set up in {{ current_docker_path }}/{{ service_name }}"

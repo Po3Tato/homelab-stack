@@ -1,0 +1,99 @@
+---
+- name: Setup Docker Services from Repository
+  hosts: "{{ target_hosts | default('all') }}"
+  become: yes
+  vars_files:
+    - ../../group_vars/all.yml
+
+  tasks:
+    - name: Set services from command line
+      set_fact:
+        current_services: "{{ services if services is defined else [] }}"
+    
+    - name: Set branch from command line
+      set_fact:
+        current_branch: "{{ branch if branch is defined else 'main' }}"
+    
+    - name: Set repo URL
+      set_fact:
+        current_repo: "{{ docker_services_repo if docker_services_repo is defined else 'https://github.com/Po3Tato/docker-playbooks' }}"
+    
+    - name: Set docker path to user home directory
+      set_fact:
+        current_docker_path: "/home/{{ docker_user }}/docker"
+        
+    - name: Create service mapping
+      set_fact:
+        service_folders:
+          ai-stack: "AI-Stack"
+          authentik: "Authentik"
+          beszel: "Beszel"
+          gitea: "Gitea"
+          glance: "Glance" 
+          gotify: "Gotify"
+          grafana: "Grafana"
+          miniflux: "Miniflux"
+          stirling-pdf: "Striling-PDF"
+          traefik: "Traefik"
+          uptime-kuma: "Uptime-Kuma"
+          vaultwarden: "Vaultwarden"
+          vikunja: "Vikunja"
+          tailscale-lb: "tailscale-lb"
+
+    - name: Validate services list
+      fail:
+        msg: "No services specified for setup"
+      when: current_services | length == 0
+
+    - name: Install git if needed
+      package:
+        name: git
+        state: present
+
+    - name: Set persistent repo path
+      set_fact:
+        persistent_repo_path: "/tmp/docker-services"
+    
+    - name: Create /tmp/docker-services directory
+      file:
+        path: "{{ persistent_repo_path }}"
+        state: directory
+        mode: '0775'
+        owner: "{{ docker_user }}"
+        group: "{{ docker_user }}"
+    
+    - name: Check if git repo exists
+      stat:
+        path: "{{ persistent_repo_path }}/.git"
+      register: git_repo_exists
+    
+    - name: Clone repo if it doesn't exist
+      git:
+        repo: "{{ current_repo }}"
+        dest: "{{ persistent_repo_path }}"
+        version: "{{ current_branch }}"
+      become_user: "{{ docker_user }}"
+      when: not git_repo_exists.stat.exists
+    
+    - name: Pull latest changes
+      git:
+        repo: "{{ current_repo }}"
+        dest: "{{ persistent_repo_path }}"
+        version: "{{ current_branch }}"
+        force: yes
+      become_user: "{{ docker_user }}"
+      when: git_repo_exists.stat.exists
+    
+    - name: Set repo path for service setup
+      set_fact:
+        temp_repo_path: "{{ persistent_repo_path }}"
+
+    - name: Setup each service
+      include_tasks: setup-single-docker-service.yml
+      loop: "{{ current_services }}"
+      loop_control:
+        loop_var: service_name
+
+    - name: Display completion message
+      debug:
+        msg: "✅ Services {{ current_services | join(', ') }} have been set up in {{ current_docker_path }}"

@@ -1,0 +1,87 @@
+---
+- name: Check if service directory exists
+  stat:
+    path: "{{ current_docker_path }}/{{ service_name }}"
+  register: service_dir_exists
+
+- name: Fail if service not set up
+  fail:
+    msg: "Service '{{ service_name }}' not found in {{ current_docker_path }}. Run setup first."
+  when: not service_dir_exists.stat.exists
+
+# Start operation
+- name: Start service with docker-compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ current_docker_path }}/{{ service_name }}"
+    project_name: "{{ service_name }}"
+    state: present
+    pull: always
+    wait: true
+    wait_timeout: 300
+  register: start_result
+  when: current_operation == 'start'
+
+# Stop operation
+- name: Stop service with docker-compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ current_docker_path }}/{{ service_name }}"
+    project_name: "{{ service_name }}"
+    state: absent
+    wait: true
+    wait_timeout: 120
+  register: stop_result
+  when: current_operation == 'stop'
+
+# Restart operation
+- name: Restart service with docker-compose
+  community.docker.docker_compose_v2:
+    project_src: "{{ current_docker_path }}/{{ service_name }}"
+    project_name: "{{ service_name }}"
+    state: present
+    recreate: always
+    wait: true
+    wait_timeout: 300
+  register: restart_result
+  when: current_operation == 'restart'
+
+# Logs operation
+- name: Get service logs
+  shell: |
+    cd {{ current_docker_path }}/{{ service_name }}
+    docker-compose logs --tail=50
+  register: logs_result
+  when: current_operation == 'logs'
+
+- name: Display logs
+  debug:
+    var: logs_result.stdout_lines
+  when: current_operation == 'logs'
+
+# Status operation
+- name: Get service status
+  shell: |
+    cd {{ current_docker_path }}/{{ service_name }}
+    docker-compose ps
+  register: status_result
+  when: current_operation == 'status'
+
+- name: Display status
+  debug:
+    var: status_result.stdout_lines
+  when: current_operation == 'status'
+
+# Display results
+- name: Display start result
+  debug:
+    msg: "✅ Successfully started {{ service_name }}"
+  when: current_operation == 'start' and start_result.changed
+
+- name: Display stop result
+  debug:
+    msg: "🛑 Successfully stopped {{ service_name }}"
+  when: current_operation == 'stop' and stop_result.changed
+
+- name: Display restart result
+  debug:
+    msg: "🔄 Successfully restarted {{ service_name }}"
+  when: current_operation == 'restart' and restart_result.changed

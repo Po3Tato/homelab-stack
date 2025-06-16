@@ -1,0 +1,33 @@
+---
+- name: Manage Docker Services
+  hosts: "{{ target_hosts | default('all') }}"
+  become: no
+  
+  tasks:
+    - name: Set operation from command line
+      set_fact:
+        current_operation: "{{ operation if operation is defined else 'start' }}"
+    
+    - name: Set services from command line
+      set_fact:
+        current_services: "{{ services if services is defined else [] }}"
+    
+    - name: Set docker path to user home directory
+      set_fact:
+        current_docker_path: "/home/{{ docker_user }}/docker"
+
+    - name: Validate operation
+      fail:
+        msg: "Invalid operation: {{ current_operation }}. Must be one of: start, stop, restart, logs, status"
+      when: current_operation not in ['start', 'stop', 'restart', 'logs', 'status']
+
+    - name: Validate services list
+      fail:
+        msg: "No services specified for management"
+      when: current_services | length == 0
+
+    - name: Manage each service
+      include_tasks: manage-single-docker-service.yml
+      loop: "{{ current_services }}"
+      loop_control:
+        loop_var: service_name
