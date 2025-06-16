@@ -37,3 +37,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Private Files
+all.yml
+pangolin_vars.yml
